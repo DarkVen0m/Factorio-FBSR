@@ -81,6 +81,8 @@ public class FBSR {
 
 	private static final int MAX_WORLD_RENDER_PIXELS = 10000 * 10000;
 	private static final Color GROUND_COLOR = new Color(40, 40, 40);
+	private static final Color GROUND_SECONDARY_COLOR = new Color(29, 29, 29);
+	private static final Color FONT_COLOR = new Color(200, 200, 200);
 
 	private static final Color GRID_COLOR = new Color(60, 60, 60);
 
@@ -143,7 +145,7 @@ public class FBSR {
 			worldRenderScale /= 2;
 		}
 
-		double borderTop = 0, borderRight = 0, borderBottom = 0, borderLeft = 0;
+		double borderTop = 1, borderRight = 1, borderBottom = 1, borderLeft = 1;
 		double borderRightBudget = 0;
 		for (Entry<Direction, PanelRenderer> entry : borderPanels.entries()) {
 			Direction dir = entry.getKey();
@@ -235,15 +237,25 @@ public class FBSR {
 		g.setColor(GROUND_COLOR);
 		g.fill(totalBounds);
 
+		g.setColor(GROUND_SECONDARY_COLOR);
+		for (double x = Math.round(worldBounds.getMinX() - borderLeft); x < worldBounds.getMaxX() + borderRight; x++) {
+			for (double y = Math.round(worldBounds.getMinY() - borderTop); y < worldBounds.getMaxY()
+					+ borderBottom; y++) {
+				if ((x + y) % 2 != 0)
+					continue;
+				g.fill(new Rectangle2D.Double(x, y, 1, 1));
+			}
+		}
+
 		// Grid Lines
-		g.setStroke(GRID_STROKE);
-		g.setColor(GRID_COLOR);
-		for (double x = Math.round(worldBounds.getMinX()); x <= worldBounds.getMaxX(); x++) {
-			g.draw(new Line2D.Double(x, worldBounds.getMinY(), x, worldBounds.getMaxY()));
-		}
-		for (double y = Math.round(worldBounds.getMinY()); y <= worldBounds.getMaxY(); y++) {
-			g.draw(new Line2D.Double(worldBounds.getMinX(), y, worldBounds.getMaxX(), y));
-		}
+//		g.setStroke(GRID_STROKE);
+//		g.setColor(GRID_COLOR);
+//		for (double x = Math.round(worldBounds.getMinX() - borderLeft); x <= worldBounds.getMaxX() + borderRight; x++) {
+//			g.draw(new Line2D.Double(x, worldBounds.getMinY() - borderTop, x, worldBounds.getMaxY() + borderBottom));
+//		}
+//		for (double y = Math.round(worldBounds.getMinY() - borderTop); y <= worldBounds.getMaxY() + borderBottom; y++) {
+//			g.draw(new Line2D.Double(worldBounds.getMinX() - borderLeft, y, worldBounds.getMaxX() + borderRight, y));
+//		}
 
 		renderers.stream().filter(r -> r instanceof EntityRenderer).map(r -> (EntityRenderer) r).forEach(r -> {
 			try {
@@ -306,13 +318,17 @@ public class FBSR {
 		g.setTransform(worldXform);
 
 		// Grid Numbers
-		g.setColor(GRID_COLOR);
+		g.setColor(FONT_COLOR);
 		g.setFont(new Font("Monospaced", Font.BOLD, 1).deriveFont(0.6f));
 		for (double x = Math.round(worldBounds.getMinX()) + 1, i = 1; x <= worldBounds.getMaxX() - 2; x++, i++) {
-			g.drawString(String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
+			drawText(g, String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
 					(float) (worldBounds.getMaxY() - 1 + 0.65f));
-			g.drawString(String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
+//			g.drawString(String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
+//					(float) (worldBounds.getMaxY() - 1 + 0.65f));
+			drawText(g, String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
 					(float) (worldBounds.getMinY() + 0.65f));
+//			g.drawString(String.format("%02d", (int) Math.round(i) % 100), (float) x + 0.2f,
+//					(float) (worldBounds.getMinY() + 0.65f));
 		}
 		for (double y = Math.round(worldBounds.getMinY()) + 1, i = 1; y <= worldBounds.getMaxY() - 2; y++, i++) {
 			g.drawString(String.format("%02d", (int) Math.round(i) % 100), (float) (worldBounds.getMaxX() - 1 + 0.2f),
@@ -514,6 +530,10 @@ public class FBSR {
 				});
 			}
 		};
+	}
+
+	private static void drawText(Graphics2D g2d, String text, float x, float y) {
+		g2d.drawString(text, x, y);
 	}
 
 	public static Map<String, Double> generateSummedTotalItems(DataTable table, BSBlueprint blueprint) {
